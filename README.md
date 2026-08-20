@@ -2,21 +2,49 @@
 
 A mobile-first ticket booking site for the "Horror Houz" attraction. ₹80/ticket, QR-driven customer journey, Razorpay payments, Supabase-backed tickets, PDF download.
 
-## Status: Phase 4 — QR code + PDF ticket ✅
+## Status: Live in production ✅
 
-**Phases 1–3** (frontend, Supabase + cash tickets, Razorpay) are done.
+All 6 phases are complete and deployed. Full loop confirmed working: scan QR → book → pay → ticket created in Supabase → PDF with QR → scan that QR → verify page confirms it's valid.
 
-What Phase 4 adds:
+### Post-launch: Cash payment removed
 
-- `lib/qr.js` — generates the ticket's QR as a PNG buffer via the `qrcode` package. Deliberately kept black-on-white regardless of the site's red/black theme — contrast matters more than branding for something a scanner has to read.
-- `lib/verifyUrl.js` — builds the `/verify/{qr_token}` URL encoded in the QR. Uses `PUBLIC_APP_URL` when set (needed for anything printed on posters/banners, since Vercel preview URLs change per deploy); falls back to the request's own host for local dev.
-- `lib/pdfTicket.js` — renders the actual ticket PDF with `pdfkit`: dark background, red/white type, dashed "ticket stub" dividers, the QR on a white plate so it stays scannable. Uses PDFKit's built-in Helvetica/Courier fonts rather than bundling Bebas Neue/Cinzel as font files — swappable later via `doc.registerFont()` if you want an exact match to the site's type.
-- `api/ticket/[ticketNumber]/pdf.js` — **GET**, looks the ticket up, generates the QR + PDF on the fly, and streams it back with `Content-Disposition: attachment; filename="Horror-Houz-<ticket_number>.pdf"`.
-- `js/app.js` — "Download Ticket" now really downloads. Shows "Preparing Your Ticket…" while it fetches, a themed inline error if it fails, and restores the button either way.
+Online (Razorpay) is now the only payment method. Changes:
 
-**Important — QR encodes `qr_token`, not `ticket_number`.** The ticket number stays printed as human-readable text for staff to read/type manually; the scannable code uses the random `qr_token` instead, since it can't be guessed the way a date-plus-6-characters ticket number theoretically could. **Phase 5's verify page needs to look tickets up by `qr_token`, not `ticket_number`**, to match.
+- Removed the Online/Cash choice from the booking modal — "Choose Payment Method" became a simple "Confirm & Pay" step, since there's no longer a choice to make.
+- **Deleted `api/create-cash-ticket.js` entirely**, not just its UI. Leaving that endpoint live while removing the button would have meant anyone who found the URL could still POST to it directly and get a free confirmed ticket with no payment — removing the frontend path alone isn't enough for something like this.
+- Removed the now-dead `.payment-options` CSS and `handleCashBooking()` JS.
+- Left the database's `payment_method` check constraint as-is (still technically allows `'CASH'` as a value) — existing test rows from earlier aren't affected either way, and nothing in the app can insert one anymore now that the endpoint is gone. Tightening the constraint itself is optional; see below if you want it anyway.
 
-What's still missing: the public `/verify/{token}` page itself (Phase 5) — right now scanning the QR will 404, since that route doesn't exist yet.
+<details>
+<summary>Optional: tighten the database constraint to match (only if you want CASH rejected at the DB level too)</summary>
+
+Run this in Supabase's SQL Editor. It's safe to run — it doesn't touch existing rows, only what's allowed to be inserted going forward:
+
+```sql
+alter table tickets drop constraint tickets_payment_method_check;
+alter table tickets add constraint tickets_payment_method_check
+  check (payment_method in ('ONLINE'));
+```
+
+</details>
+
+## Earlier phase history
+
+The sections below are the original phase-by-phase build log — left as-is for reference, even though Cash is no longer part of the live app.
+
+## Status: Phase 5 — Public verify page ✅
+
+**Phases 1–4** (frontend, Supabase + cash tickets, Razorpay, QR + PDF) are done.
+
+What Phase 5 adds:
+
+- `api/verify/[token].js` — **GET**, public lookup by `qr_token` (not `ticket_number` — see the note in the Phase 4 section above). Returns only `ticket_number` and `ticket_status`, nothing else — this endpoint is reachable by literally anyone who scans a QR, including a stranger who finds a dropped ticket, so it stays as minimal as possible.
+- `verify.html` + `js/verify.js` — the actual page a scanned QR lands on. Shows a themed loading state, then either a **VALID TICKET** or **INVALID TICKET** state, matching the brief's mockups. A separate network-error state (`THE CONNECTION DISAPPEARED…`) is shown if the fetch itself fails, distinct from a genuinely-not-found ticket.
+- `vercel.json` — adds a rewrite so `/verify/:token` serves `verify.html` while keeping that URL in the browser's address bar. The token is read from `window.location.pathname` client-side, not a query string.
+
+**No admin/scan-to-mark-used functionality** — deliberately, per the brief. This page only answers "is this ticket real," nothing else.
+
+What's still missing: production deployment itself (Phase 6) — right now everything only runs via `vercel dev` locally.
 
 ## Run it locally
 
@@ -32,32 +60,33 @@ vercel dev
 
 Test at 360px, 390px, 412px, 768px, 1024px, 1440px widths (dev tools device toolbar).
 
-## What to check in Phase 4
+## What to check in Phase 5
 
-No new external setup needed — `qrcode` and `pdfkit` are plain npm packages, just `npm install` picks them up.
+No new external setup needed.
 
-1. Book a ticket (either Cash or Online) through to the success screen.
-2. Click **Download Ticket** — button should read "Preparing Your Ticket…" briefly, then a PDF named `Horror-Houz-<ticket_number>.pdf` should download.
-3. Open the PDF — confirm it shows the correct ticket number, customer name, quantity, amount, payment method, status, and booking date, plus a QR code on a white plate.
-4. Scan the QR with your phone camera — since `PUBLIC_APP_URL` probably isn't set to a real domain yet, it'll likely point at `localhost` or a preview URL and won't resolve to anything real. That's expected until Phase 5 exists and you deploy with a real domain in Phase 6 — for now just confirm the QR *scans cleanly* (readable, not garbled) rather than expecting it to load a working page.
-5. Hit `/api/ticket/<a-real-ticket-number>/pdf` directly in the browser — should download the same PDF.
-6. Hit `/api/ticket/does-not-exist/pdf` — should get a clean 404 JSON error, not a crash or a broken PDF.
-7. On a slow/throttled connection (dev tools network throttling), confirm the "Preparing Your Ticket…" state actually shows and the button re-enables if the request fails.
+1. Book any ticket (Cash or Online) and download its PDF.
+2. Get that ticket's `qr_token` — either scan the QR in the PDF with your phone (if you can read the URL it opens without actually navigating, e.g. via a QR-reading app rather than your camera's auto-open), or just open Supabase's Table Editor and copy the `qr_token` column value for that row directly.
+3. With `vercel dev` running, open `http://localhost:3000/verify/<that qr_token>` in your browser. You should see "Checking Ticket…" briefly, then **VALID TICKET** with the correct ticket number and status.
+4. Try `http://localhost:3000/verify/not-a-real-token` — should show **INVALID TICKET**, not a crash or a blank page.
+5. Confirm the URL in your browser's address bar stays as `/verify/<token>` the whole time (not `/verify.html?token=...`) — that's the rewrite working correctly.
+6. Turn off `vercel dev` mid-request (or throttle/disconnect network) and reload a verify page — you should see the "THE CONNECTION DISAPPEARED…" state, not a generic browser error page.
 
 ## Coming up
 
-- **Phase 5** — Public `/verify/{qr_token}` page (valid/invalid states), fuller error handling
-- **Phase 6** — Deploy: GitHub → Vercel → Supabase → Razorpay production env vars, and set `PUBLIC_APP_URL` for real so QR codes actually resolve
+- **Phase 6** — Deploy: GitHub → Vercel → Supabase → Razorpay production env vars, and set `PUBLIC_APP_URL` for real so QR codes printed on posters actually resolve to your live domain
 
 ## Project structure
 
 ```
 horror-houz/
 ├── index.html
+├── verify.html
+├── vercel.json
 ├── css/style.css
 ├── js/
 │   ├── app.js
-│   └── payment.js
+│   ├── payment.js
+│   └── verify.js
 ├── lib/
 │   ├── supabaseAdmin.js
 │   ├── razorpay.js
@@ -67,9 +96,9 @@ horror-houz/
 │   ├── verifyUrl.js
 │   └── pdfTicket.js
 ├── api/
-│   ├── create-cash-ticket.js
 │   ├── create-order.js
 │   ├── verify-payment.js
+│   ├── verify/[token].js
 │   └── ticket/
 │       ├── [ticketNumber].js
 │       └── [ticketNumber]/pdf.js
@@ -81,6 +110,3 @@ horror-houz/
 ├── package.json
 └── README.md
 ```
-
-
-Thank You

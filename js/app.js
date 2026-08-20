@@ -233,52 +233,14 @@ import { createOrder, payWithRazorpay, CheckoutCancelledError } from "./payment.
 
   /* ---------------------------------------------------------
      Step 2 → Step 3 → Step 4: payment
-     CASH calls /api/create-cash-ticket directly.
-     ONLINE creates a Razorpay order, opens Checkout, and verifies
-     the signed payment server-side before the ticket is created.
+     Online is the only payment method — creates a Razorpay order,
+     opens Checkout, and verifies the signed payment server-side
+     before the ticket is created.
      --------------------------------------------------------- */
   function showPaymentError(message) {
     showStep(stepPayment);
     paymentError.hidden = false;
     paymentError.textContent = message;
-  }
-
-  async function handleCashBooking() {
-    showStep(stepLoading);
-    loadingText.textContent = "Confirming Booking\u2026";
-
-    const payload = {
-      customer_name: inputName.value.trim(),
-      customer_mobile: inputMobile.value.trim(),
-      quantity,
-    };
-
-    try {
-      const response = await fetch("/api/create-cash-ticket", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      let data = null;
-      try { data = await response.json(); } catch (_) { /* non-JSON error page */ }
-
-      if (!response.ok) {
-        throw new Error((data && data.error) || "Could not create your ticket.");
-      }
-
-      resultTicketNumber.textContent = data.ticket_number;
-      resultAmount.textContent = formatRupees(data.amount);
-      successDemoNote.textContent = "Keep this ticket handy for entry.";
-      showStep(stepSuccess);
-    } catch (err) {
-      const isNetworkError = err instanceof TypeError; // fetch throws TypeError on network failure
-      showPaymentError(
-        isNetworkError
-          ? "THE CONNECTION DISAPPEARED\u2026 Please check your internet and try again."
-          : err.message
-      );
-    }
   }
 
   async function handleOnlineBooking() {
@@ -317,24 +279,10 @@ import { createOrder, payWithRazorpay, CheckoutCancelledError } from "./payment.
     }
   }
 
-  function getSelectedPaymentMethod() {
-    // The Online/Cash radios live in the payment step, which is a sibling
-    // of <form id="booking-form">, not inside it — so bookingForm.elements
-    // can't see them. Query the DOM directly instead.
-    const checked = document.querySelector('input[name="payment_method"]:checked');
-    return checked ? checked.value : "ONLINE";
-  }
-
   btnPay.addEventListener("click", () => {
     paymentError.hidden = true;
     paymentError.textContent = "";
-
-    const method = getSelectedPaymentMethod();
-    if (method === "CASH") {
-      handleCashBooking();
-    } else {
-      handleOnlineBooking();
-    }
+    handleOnlineBooking();
   });
 
   btnDownload.addEventListener("click", async () => {

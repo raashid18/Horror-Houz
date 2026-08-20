@@ -719,20 +719,6 @@ ul { margin: 0; padding: 0; }
 }
 .modal__total strong { font-family: var(--font-display); font-size: 1.4rem; color: var(--text-primary); }
 
-.payment-options { display: grid; gap: 12px; margin-bottom: 8px; }
-.payment-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: border-color 0.2s var(--ease);
-}
-.payment-option:has(input:checked) { border-color: var(--accent-bright); }
-.payment-option input { accent-color: var(--accent-bright); width: 18px; height: 18px; }
-
 #btn-back-details { margin-top: 12px; }
 
 .modal__error {
@@ -818,3 +804,77 @@ ul { margin: 0; padding: 0; }
 }
 
 #btn-download { margin-bottom: 10px; }
+
+/* =========================================================
+   Verify page
+   ========================================================= */
+.verify-page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.verify-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-deep);
+  border-radius: 12px;
+  padding: 40px 28px;
+  text-align: center;
+}
+
+.verify-icon {
+  font-size: 2.6rem;
+  line-height: 1;
+  margin: 4px 0 12px;
+}
+.verify-icon--valid { color: var(--accent-bright); }
+.verify-icon--invalid { color: var(--text-secondary); }
+
+.verify-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.04em;
+  margin: 0 0 18px;
+}
+.verify-title--valid { color: var(--text-primary); }
+.verify-title--invalid { color: var(--text-secondary); }
+
+.verify-brand {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-bright);
+  margin: 0 0 24px;
+}
+
+.verify-message {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.verify-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 14px 0;
+  border-top: 1px dashed rgba(245,245,245,0.15);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: left;
+}
+.verify-detail:last-child { border-bottom: 1px dashed rgba(245,245,245,0.15); }
+.verify-detail strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+  color: var(--text-primary);
+}
+
+#verify-loading { padding: 20px 0; }
