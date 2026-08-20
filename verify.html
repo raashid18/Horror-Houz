@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Verify Ticket | Horror Houz</title>
+<meta name="robots" content="noindex" />
+<meta name="theme-color" content="#050505" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div class="atmosphere" aria-hidden="true">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+</div>
+
+<main class="verify-page">
+  <div class="verify-card">
+    <p class="eyebrow eyebrow--center">Horror Houz</p>
+
+    <div id="verify-loading">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="modal__loading-text">Checking Ticket&hellip;</p>
+    </div>
+
+    <div id="verify-result" hidden></div>
+  </div>
+</main>
+
+<script type="module" src="/js/verify.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "horror-houz",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Horror Houz — ₹80 ticket booking site (Vercel + Supabase + Razorpay)",
+  "scripts": {
+    "dev": "npx serve ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "razorpay": "^2.9.4",
+    "qrcode": "^1.5.4",
+    "pdfkit": "^0.15.0"
+  }
+}
